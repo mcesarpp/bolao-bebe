@@ -656,25 +656,23 @@
                 container.appendChild(emptyDay);
             }
 
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayElement = document.createElement('div');
                 dayElement.className = 'calendar-day';
                 dayElement.textContent = day;
                 const dateStr = `${day.toString().padStart(2, '0')}/${(month + 1).toString().padStart(2, '0')}/2026`;
                 dayElement.dataset.date = dateStr;
-            
-                // Bloquear datas anteriores à data atual
-                const today = new Date();
-                const thisDate = new Date(2026, month, day); // ano fixo 2026
-            
-                // zera hora/min/seg para comparar só a data
-                today.setHours(0,0,0,0);
+
+                const thisDate = new Date(2026, month, day);
                 thisDate.setHours(0,0,0,0);
-            
+
                 const isPast = thisDate < today;
-            
+
                 const bet = bets.find(b => b.date === dateStr);
-            
+
                 if (bet) {
                     if (bet.paymentConfirmed) {
                         dayElement.classList.add('confirmed');
@@ -683,15 +681,14 @@
                         dayElement.classList.add('reserved');
                         dayElement.title = `Reservado: ${bet.name} (aguardando pagamento)`;
                     }
-                    // datas com aposta não podem ser clicadas
                 } else if (isPast) {
-                    dayElement.classList.add('empty'); // visual neutro
+                    dayElement.classList.add('empty');
                     dayElement.style.cursor = 'not-allowed';
                     dayElement.title = 'Data anterior à data atual (não disponível)';
                 } else {
                     dayElement.addEventListener('click', () => selectDate(dateStr));
                 }
-            
+
                 container.appendChild(dayElement);
             }
         }
@@ -727,7 +724,7 @@
 
             container.innerHTML = bets.map(bet => `
                 <div class="bet-item">
-                    <div class="bet-name">${bet.name} <span style="font-size:0.8em;color:#777;">(${bet.phone})</span></div>
+                    <div class="bet-name">${bet.name}</div>
                     <div class="bet-date">${bet.date}</div>
                     <div class="bet-status ${bet.paymentConfirmed ? 'confirmed' : 'reserved'}">
                         ${bet.paymentConfirmed ? '✓ Confirmado' : '⏱ Aguardando'}
