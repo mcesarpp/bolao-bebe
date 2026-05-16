@@ -10,7 +10,8 @@
             --color-primary-dark: #5d4d82;
             --color-surface: #f5f3ff;
             --color-surface-2: #ebe7ff;
-            --color-selected: #b8a8d6;
+            --color-reserved: #f0a726;
+            --color-confirmed: #b8a8d6;
             --color-text: #2d2640;
             --color-text-muted: #6b5f7f;
             --color-border: #d4cce6;
@@ -25,7 +26,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
@@ -96,6 +97,35 @@
             margin-bottom: var(--space-4);
         }
 
+        .legend {
+            display: flex;
+            gap: var(--space-4);
+            justify-content: center;
+            margin-bottom: var(--space-4);
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: 0.875rem;
+        }
+
+        .legend-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .legend-box.reserved {
+            background: var(--color-reserved);
+        }
+
+        .legend-box.confirmed {
+            background: var(--color-confirmed);
+        }
+
         .calendar {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -128,7 +158,7 @@
             position: relative;
         }
 
-        .calendar-day:hover:not(.empty):not(.selected) {
+        .calendar-day:hover:not(.empty):not(.reserved):not(.confirmed) {
             background: var(--color-surface);
             transform: scale(1.05);
         }
@@ -138,14 +168,29 @@
             cursor: default;
         }
 
-        .calendar-day.selected {
-            background: var(--color-selected);
+        .calendar-day.reserved {
+            background: var(--color-reserved);
             color: white;
             font-weight: 600;
             cursor: not-allowed;
         }
 
-        .calendar-day.selected::after {
+        .calendar-day.confirmed {
+            background: var(--color-confirmed);
+            color: white;
+            font-weight: 600;
+            cursor: not-allowed;
+        }
+
+        .calendar-day.reserved::after {
+            content: '⏱';
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 0.75rem;
+        }
+
+        .calendar-day.confirmed::after {
             content: '✓';
             position: absolute;
             top: 4px;
@@ -200,6 +245,21 @@
             font-size: 1.25rem;
         }
 
+        .payment-warning {
+            background: #fff3cd;
+            border-left: 4px solid #f0a726;
+            padding: var(--space-3);
+            margin-bottom: var(--space-4);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+        }
+
+        .payment-warning strong {
+            display: block;
+            margin-bottom: var(--space-2);
+            color: #856404;
+        }
+
         .form-group {
             margin-bottom: var(--space-4);
         }
@@ -212,7 +272,7 @@
             font-size: 0.875rem;
         }
 
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: var(--space-3);
             border: 2px solid var(--color-border);
@@ -221,7 +281,12 @@
             transition: border-color 180ms ease;
         }
 
-        input:focus, select:focus {
+        textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--color-primary);
         }
@@ -273,7 +338,7 @@
             padding: var(--space-3);
             border-bottom: 1px solid var(--color-border);
             display: grid;
-            grid-template-columns: 1fr auto;
+            grid-template-columns: 1fr auto auto;
             align-items: center;
             gap: var(--space-3);
         }
@@ -294,6 +359,24 @@
             font-size: 0.875rem;
             color: var(--color-primary);
             font-weight: 600;
+        }
+
+        .bet-status {
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .bet-status.reserved {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .bet-status.confirmed {
+            background: #d4edda;
+            color: #155724;
         }
 
         .empty-message {
@@ -371,9 +454,14 @@
                 min-height: 50px;
                 font-size: 0.875rem;
             }
-
+            
             .prize-value {
                 font-size: 2rem;
+            }
+
+            .bet-item {
+                grid-template-columns: 1fr;
+                gap: var(--space-2);
             }
         }
     </style>
@@ -387,6 +475,17 @@
 
         <div class="main-grid">
             <div class="calendars">
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-box reserved"></div>
+                        <span>⏱ Reservado (aguardando pagamento)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-box confirmed"></div>
+                        <span>✓ Confirmado (pagamento recebido)</span>
+                    </div>
+                </div>
+
                 <div class="calendar-container">
                     <div class="calendar-header">MAIO 2026</div>
                     <div class="calendar" id="calendar-maio"></div>
@@ -407,6 +506,12 @@
 
                 <div class="form-box">
                     <h3>Faça sua Aposta</h3>
+                    
+                    <div class="payment-warning">
+                        <strong>⚠️ Atenção!</strong>
+                        Você tem 24 horas para fazer o pagamento após reservar a data. Após esse prazo, a data fica disponível novamente.
+                    </div>
+
                     <form id="bet-form">
                         <div class="form-group">
                             <label for="name">Nome Completo</label>
@@ -433,7 +538,12 @@
                             </select>
                         </div>
 
-                        <button type="submit" id="submit-btn">Confirmar Aposta - R$ 25,00</button>
+                        <div class="form-group">
+                            <label for="notes">Observações</label>
+                            <textarea id="notes" placeholder="Ex: vou pagar amanhã de manhã, etc."></textarea>
+                        </div>
+
+                        <button type="submit" id="submit-btn">Reservar Data - R$ 25,00</button>
                     </form>
                 </div>
             </div>
@@ -450,11 +560,12 @@
             <h3>Regras do Bolão</h3>
             <ul>
                 <li>Cada participante faz 1 aposta de <strong>R$ 25,00</strong></li>
+                <li><strong>Você tem 24 horas</strong> para fazer o pagamento após reservar a data</li>
+                <li>Sua data só fica <strong>confirmada</strong> após o pagamento ser verificado</li>
                 <li>O prêmio será <strong>50% do valor total arrecadado</strong></li>
                 <li>Vence quem <strong>acertar a data exata</strong> do nascimento</li>
                 <li>Se ninguém acertar, vence quem <strong>chegar mais perto</strong></li>
                 <li>Em caso de empate, o prêmio será <strong>dividido igualmente</strong></li>
-                <li>Antes de apostar, confira no calendário as datas já escolhidas</li>
             </ul>
         </div>
     </div>
@@ -464,14 +575,14 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxmDeW0y7-xk337iwGuawGt7qHHagD6be5p8FZMSxJ4x8qMGX8Xiufkohm0XD-QueDR/exec';
 
         let bets = [];
-        let selectedDates = new Set();
+        let isSubmitting = false;
 
         function showAlert(message, type = 'success') {
             const alert = document.createElement('div');
             alert.className = `alert ${type}`;
             alert.textContent = message;
             document.body.appendChild(alert);
-
+            
             setTimeout(() => {
                 alert.style.animation = 'slideIn 0.3s ease reverse';
                 setTimeout(() => alert.remove(), 300);
@@ -482,10 +593,9 @@
             try {
                 const response = await fetch(`${SCRIPT_URL}?action=getBets&t=${Date.now()}`);
                 const data = await response.json();
-
+                
                 bets = data.bets || [];
-                selectedDates = new Set(bets.map(bet => bet.date));
-
+                
                 updateCalendars();
                 updatePrize();
                 renderBets();
@@ -498,19 +608,19 @@
 
         async function saveBet(betData) {
             try {
-                // Usar GET com parâmetros de query para evitar CORS preflight
                 const params = new URLSearchParams({
                     action: 'addBet',
                     name: betData.name,
                     phone: betData.phone,
                     date: betData.date,
                     payment: betData.payment,
+                    notes: betData.notes || '',
                     timestamp: betData.timestamp
                 });
-
+                
                 const response = await fetch(`${SCRIPT_URL}?${params}`);
                 const result = await response.json();
-
+                
                 if (result.success) {
                     await loadBets();
                     return true;
@@ -528,7 +638,7 @@
         function renderCalendar(month, year, containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-
+            
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -552,13 +662,36 @@
                 dayElement.textContent = day;
                 const dateStr = `${day.toString().padStart(2, '0')}/${(month + 1).toString().padStart(2, '0')}/2026`;
                 dayElement.dataset.date = dateStr;
-
-                if (selectedDates.has(dateStr)) {
-                    dayElement.classList.add('selected');
+            
+                // Bloquear datas anteriores à data atual
+                const today = new Date();
+                const thisDate = new Date(2026, month, day); // ano fixo 2026
+            
+                // zera hora/min/seg para comparar só a data
+                today.setHours(0,0,0,0);
+                thisDate.setHours(0,0,0,0);
+            
+                const isPast = thisDate < today;
+            
+                const bet = bets.find(b => b.date === dateStr);
+            
+                if (bet) {
+                    if (bet.paymentConfirmed) {
+                        dayElement.classList.add('confirmed');
+                        dayElement.title = `Confirmado: ${bet.name}`;
+                    } else {
+                        dayElement.classList.add('reserved');
+                        dayElement.title = `Reservado: ${bet.name} (aguardando pagamento)`;
+                    }
+                    // datas com aposta não podem ser clicadas
+                } else if (isPast) {
+                    dayElement.classList.add('empty'); // visual neutro
+                    dayElement.style.cursor = 'not-allowed';
+                    dayElement.title = 'Data anterior à data atual (não disponível)';
                 } else {
                     dayElement.addEventListener('click', () => selectDate(dateStr));
                 }
-
+            
                 container.appendChild(dayElement);
             }
         }
@@ -569,29 +702,24 @@
         }
 
         function selectDate(dateStr) {
-            if (selectedDates.has(dateStr)) {
-                showAlert('Esta data já foi escolhida!', 'error');
-                return;
-            }
-
             document.getElementById('date').value = dateStr;
         }
 
         function updatePrize() {
-            const totalBets = bets.length;
-            const totalAmount = totalBets * 25;
+            const confirmedBets = bets.filter(b => b.paymentConfirmed).length;
+            const totalAmount = confirmedBets * 25;
             const prizeAmount = totalAmount * 0.5;
 
             document.getElementById('prize-value').textContent = 
                 `R$ ${prizeAmount.toFixed(2).replace('.', ',')}`;
             document.getElementById('prize-info').textContent = 
-                `${totalBets} aposta${totalBets !== 1 ? 's' : ''} × R$ 25,00`;
-            document.getElementById('bet-count').textContent = totalBets;
+                `${confirmedBets} aposta${confirmedBets !== 1 ? 's confirmadas' : ' confirmada'} × R$ 25,00`;
+            document.getElementById('bet-count').textContent = bets.length;
         }
 
         function renderBets() {
             const container = document.getElementById('bets-container');
-
+            
             if (bets.length === 0) {
                 container.innerHTML = '<div class="empty-message">Nenhuma aposta realizada ainda. Seja o primeiro!</div>';
                 return;
@@ -599,8 +727,11 @@
 
             container.innerHTML = bets.map(bet => `
                 <div class="bet-item">
-                    <div class="bet-name">${bet.name}</div>
+                    <div class="bet-name">${bet.name} <span style="font-size:0.8em;color:#777;">(${bet.phone})</span></div>
                     <div class="bet-date">${bet.date}</div>
+                    <div class="bet-status ${bet.paymentConfirmed ? 'confirmed' : 'reserved'}">
+                        ${bet.paymentConfirmed ? '✓ Confirmado' : '⏱ Aguardando'}
+                    </div>
                 </div>
             `).join('');
         }
@@ -608,22 +739,24 @@
         document.getElementById('bet-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            if (isSubmitting) {
+                showAlert('Aguarde... processando sua aposta.', 'error');
+                return;
+            }
+
             const submitBtn = document.getElementById('submit-btn');
             const name = document.getElementById('name').value;
             const phone = document.getElementById('phone').value;
             const date = document.getElementById('date').value;
             const payment = document.getElementById('payment').value;
+            const notes = document.getElementById('notes').value;
 
             if (!date) {
                 showAlert('Por favor, selecione uma data no calendário.', 'error');
                 return;
             }
 
-            if (selectedDates.has(date)) {
-                showAlert('Esta data já foi escolhida. Selecione outra.', 'error');
-                return;
-            }
-
+            isSubmitting = true;
             submitBtn.disabled = true;
             submitBtn.textContent = 'Enviando...';
 
@@ -632,6 +765,7 @@
                 phone,
                 date,
                 payment,
+                notes,
                 timestamp: new Date().toISOString()
             };
 
@@ -640,18 +774,16 @@
             if (success) {
                 document.getElementById('bet-form').reset();
                 document.getElementById('date').value = '';
-                showAlert(`Aposta confirmada! ${name} apostou em ${date}. Não esqueça do Pix de R$ 25!`);
+                showAlert(`Data reservada! ${name}, você tem 24h para fazer o Pix de R$ 25!`);
             }
 
+            isSubmitting = false;
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Confirmar Aposta - R$ 25,00';
+            submitBtn.textContent = 'Reservar Data - R$ 25,00';
         });
 
-        // Carregar apostas ao iniciar
         loadBets();
-
-        // Recarregar apostas a cada 30 segundos
-        setInterval(loadBets, 30000);
+        setInterval(loadBets, 15000);
     </script>
 </body>
 </html>
