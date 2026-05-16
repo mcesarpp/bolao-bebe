@@ -635,6 +635,28 @@
             }
         }
 
+        function normalizeDateStr(isoString) {
+            if (!isoString) return '';
+        
+            // Se já estiver no formato dd/MM/yyyy, retorna direto
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(isoString)) {
+                return isoString;
+            }
+        
+            // Tenta converter ISO (ex: 2026-06-06T03:00:00.000Z)
+            const date = new Date(isoString);
+            if (isNaN(date.getTime())) {
+                return '';
+            }
+        
+            const d = String(date.getDate()).padStart(2, '0');
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const y = date.getFullYear();
+        
+            return `${d}/${m}/${y}`;
+        }
+                
+
         function renderCalendar(month, year, containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
@@ -671,7 +693,7 @@
 
                 const isPast = thisDate < today;
 
-                const bet = bets.find(b => b.date === dateStr);
+                const bet = bets.find(b => normalizeDateStr(b.date) === dateStr);
 
                 if (bet) {
                     if (bet.paymentConfirmed) {
